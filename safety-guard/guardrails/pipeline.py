@@ -34,7 +34,8 @@ class SafetyPipeline:
     def __init__(self, ruleset: Ruleset, audit: AuditLog | None = None) -> None:
         self.ruleset = ruleset
         self.audit = audit or AuditLog()
-        self._awaiting_verification: set[str] = set()
+        # The pipeline itself holds no per-call state: everything lives in CallState,
+        # so a backend can save the state between turns and rebuild the pipeline each time.
 
     # ---------------------------------------------------------------- helpers
 
@@ -65,12 +66,12 @@ class SafetyPipeline:
             if decision.action in (Action.ESCALATE, Action.END_CALL):
                 return CustomerTurnResult(self._log(state, "customer_turn", {"utterance": utterance}, decision), None)
 
-            if state.call_id in self._awaiting_verification and not state.verified:
+            if state.awaiting_verification and not state.verified:
                 id_decision = identity.verify_identity(state, utterance, self.ruleset)
                 decision = decision.merge(id_decision)
                 if id_decision.action is not Action.ALLOW:
                     return CustomerTurnResult(self._log(state, "customer_turn", {"utterance": "[verification answer]"}, decision), None)
-                self._awaiting_verification.discard(state.call_id)
+                state.awaiting_verification = False
                 utterance = "[customer provided verification details]"  # never send DOB/postcode to the LLM
 
             llm_input = input_guard.sanitize_for_llm(utterance)
@@ -105,7 +106,7 @@ class SafetyPipeline:
             decision = Decision(action, offer_d.findings + out_d.findings, out_d.text)
 
             if decision.text and ASKS_FOR_VERIFICATION.search(decision.text) and not state.verified:
-                self._awaiting_verification.add(state.call_id)
+                state.awaiting_verification = True
 
             payload = {"draft": draft.text, "offer": vars(draft.offer) if draft.offer else None}
             return self._log(state, "agent_turn", payload, decision)

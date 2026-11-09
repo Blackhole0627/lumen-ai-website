@@ -1,0 +1,11 @@
+# Docker build context is the repo root; only backend/ and safety-guard/ are needed.
+.git
+node_modules
+dist
+src
+public
+**/__pycache__
+**/.pytest_cache
+**/*.db
+**/.env
+backend/data

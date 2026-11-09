@@ -27,3 +27,11 @@ dist-ssr
 __pycache__/
 *.pyc
 .venv/
+
+# Backend local files
+.env
+backend/data/
+*.db
+.pytest_cache/
+build/
+*.egg-info/

@@ -106,6 +106,7 @@ class CallState:
     account: Account
     call_id: str
     verified: bool = False
+    awaiting_verification: bool = False  # the agent has just asked for DOB/postcode
     verification_attempts: int = 0
     third_party: bool = False
     ai_disclosed: bool = False

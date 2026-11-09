@@ -1,0 +1,25 @@
+name: backend
+
+on:
+  push:
+    paths: ["backend/**", "safety-guard/**", ".github/workflows/backend.yml"]
+  pull_request:
+    paths: ["backend/**", "safety-guard/**", ".github/workflows/backend.yml"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: |
+          pip install ./safety-guard
+          pip install -r backend/requirements-dev.txt
+      - name: Guardrails demo
+        run: python safety-guard/demo.py
+      - name: Backend tests
+        working-directory: backend
+        run: pytest -q
